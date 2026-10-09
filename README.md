@@ -5,8 +5,8 @@
 g2-engine is a software raster engine for the [Even Realities G2](https://www.evenrealities.com/) smart glasses.
 It draws into a 576×288 framebuffer in TypeScript, reduces each frame to the display's 16 brightness levels, and sends the glasses only the image tiles whose pixels changed.
 
-> **Status: early prototype.** Everything in this repository runs in the official Even Hub simulator (0.9.5).
-> It has not run on physical glasses yet, so frame rate and latency over Bluetooth are still unknown.
+> **Status: early prototype.** Everything here runs in the official Even Hub simulator (0.9.5), and the coin demo has run on G2 glasses.
+> On the glasses, the coin runs at about 1.5 to 2 fps. Each image update costs about 150 ms plus time for the detail in the image ([measurements](docs/g2-platform.md#measured-on-glasses)).
 
 This is an independent project. It is not affiliated with or endorsed by Even Realities.
 
@@ -81,9 +81,8 @@ Measured in the simulator on a desktop PC. These numbers say nothing about Bluet
 | Small coin | 1 | 30 fps (the cap) | about 21 KB |
 | Paused | 0 sent | not applicable | 0 |
 
-On the glasses, Even Hub holds each image send for at least 100 ms, which allows at most 10 image updates per second.
-Expect at most 10 fps for the small coin and 5 fps for the large coin, and less once Bluetooth is counted.
-[docs/g2-platform.md](docs/g2-platform.md) lists this and the other platform limits.
+These are simulator numbers. The simulator skips the Bluetooth cost, and on G2 glasses the small coin runs at about 1.5 to 2 fps.
+[docs/g2-platform.md](docs/g2-platform.md#measured-on-glasses) has the measurements and the other platform limits.
 
 The large coin can tear.
 Each tile updates separately and the SDK has no way to swap two tiles at once, so for a moment one half can show a different frame from the other.

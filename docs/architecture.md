@@ -79,7 +79,7 @@ The engine defaults to 4 bits.
 The encoder uses uncompressed deflate blocks.
 The PNG travels only from the WebView to the Even app on the same phone.
 The SDK README says image data is compressed with LZ4 internally to reduce transfer size, so the engine does not spend phone CPU on deflate.
-Whether deflate before LZ4 would shrink the Bluetooth payload is not measured yet.
+On the glasses, the PNG size made no difference: a 4-bit and an 8-bit PNG of the same image took the same time, and same-size PNGs with different content took between 0.2 and 3.3 s ([measurements](g2-platform.md#measured-on-glasses)). What costs time is the detail in the pixels, so compressing the PNG would not help.
 The `KB/frame` figure the demo reports is the PNG size handed to the bridge, not the number of bytes sent over Bluetooth.
 
 The SDK types describe `imageData` only as grayscale bytes.
