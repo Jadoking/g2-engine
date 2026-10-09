@@ -1,8 +1,24 @@
 {
   "name": "g2-engine",
   "version": "0.0.1",
-  "private": true,
-  "description": "Software raster engine for Even Realities G2: draw in a 576x288 16-level framebuffer, ship only changed image tiles.",
+  "description": "Software raster engine for Even Realities G2 glasses: draw in a 576x288 16-level framebuffer and send only changed image tiles.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Jadoking/g2-engine.git"
+  },
+  "keywords": [
+    "even-realities",
+    "g2",
+    "smart-glasses",
+    "even-hub",
+    "rasterizer",
+    "greyscale",
+    "animation"
+  ],
+  "engines": {
+    "node": ">=22.18"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite demos/coin --host 127.0.0.1 --port 47846 --strictPort",

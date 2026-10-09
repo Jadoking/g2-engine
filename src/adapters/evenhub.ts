@@ -1,5 +1,5 @@
 // Thin Even Hub binding: maps engine tiles to SDK image containers and
-// serializes every bridge call (the SDK requires one image update at a time).
+// serializes every bridge call. The Even Hub display docs forbid concurrent image sends.
 import {
   ImageContainerProperty,
   ImageRawDataUpdate,
