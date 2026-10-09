@@ -14,6 +14,7 @@ import {
   OsEventTypeList,
   type EvenAppBridge,
   type EvenHubEvent,
+  type DeviceStatus,
 } from '@evenrealities/even_hub_sdk';
 import { Engine, FrameLoop, quantize, SCREEN_WIDTH, SCREEN_HEIGHT, type Dither, type FrameStats, type Rect, type TileSink } from '../../src/index.ts';
 import { evenHubSink, imageContainers, serialQueue, type Serial } from '../../src/adapters/evenhub.ts';
@@ -35,7 +36,13 @@ const LAYOUTS: Layout[] = [
 ];
 const LABEL = 'G2 ENGINE\n\nspinning coin\n\nray-cast\n4x AA\n16 levels';
 
-const state = { angle: 0, speed: 0.5, paused: false, dither: 'none' as Dither, layout: 0, switching: false };
+// URL options: ?layout=small starts with the 1-tile coin; ?telemetry also POSTs every
+// log line as JSON to ./telemetry on the serving origin (for hardware measurement runs).
+const params = new URLSearchParams(location.search);
+const telemetry = params.has('telemetry');
+const session = Math.random().toString(36).slice(2, 8);
+
+const state = { angle: 0, speed: 0.5, paused: false, dither: 'none' as Dither, layout: params.get('layout') === 'small' ? 1 : 0, switching: false };
 
 const statusEl = document.getElementById('status')!;
 const mirror = (document.getElementById('mirror') as HTMLCanvasElement).getContext('2d')!;
@@ -45,6 +52,32 @@ function log(tag: string, value: unknown): void {
   const text = typeof value === 'string' ? value : JSON.stringify(value);
   console.log(tag, text);
   statusEl.textContent = `${tag} ${text}`;
+  if (telemetry) {
+    void fetch('telemetry', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ session, t: Date.now(), tag, value }),
+      keepalive: true,
+    }).catch(() => {});
+  }
+}
+
+addEventListener('error', (e) => log('COIN_ERROR', String(e.error?.stack ?? e.message)));
+addEventListener('unhandledrejection', (e) => log('COIN_ERROR', String(e.reason?.stack ?? e.reason)));
+
+/** Per-call timings of updateImageRawData (including the wait in the serial queue). */
+function timingSummary(samples: number[]) {
+  if (samples.length === 0) return { n: 0 };
+  const s = [...samples].sort((a, b) => a - b);
+  const at = (q: number) => Math.round(s[Math.min(s.length - 1, Math.floor(q * s.length))]);
+  return { n: s.length, p50: at(0.5), p90: at(0.9), max: Math.round(s[s.length - 1]) };
+}
+
+/** Battery and connection state, without the serial number. */
+function deviceStatus(status: DeviceStatus | undefined) {
+  if (!status) return { status: null };
+  const { connectType, batteryLevel, isCharging, isWearing, isInCase } = status;
+  return { connectType, batteryLevel, isCharging, isWearing, isInCase };
 }
 
 async function connect(): Promise<EvenAppBridge | null> {
@@ -92,7 +125,13 @@ function paintMirror(engine: Engine): void {
 
 /** One running layout: its engine and frame loop. Replaced wholesale on a layout switch. */
 function startLayout(layout: Layout, bridge: EvenAppBridge | null, serial: Serial): FrameLoop {
-  const sink: TileSink = bridge ? evenHubSink(bridge, serial) : async () => {};
+  const sends: number[] = [];
+  const base: TileSink = bridge ? evenHubSink(bridge, serial) : async () => {};
+  const sink: TileSink = async (index, png) => {
+    const start = performance.now();
+    await base(index, png);
+    sends.push(performance.now() - start);
+  };
   const engine = new Engine({ tiles: layout.tiles, sink, dither: state.dither });
   const bounds = coinBounds(layout.coin);
   const loop = new FrameLoop(
@@ -106,7 +145,8 @@ function startLayout(layout: Layout, bridge: EvenAppBridge | null, serial: Seria
     {
       maxFps: 30,
       onStats: (stats) => {
-        log('COIN_STATS', { layout: layout.name, ...stats, paused: state.paused, speed: state.speed, dither: state.dither });
+        const send = timingSummary(sends.splice(0));
+        log('COIN_STATS', { layout: layout.name, ...stats, send, paused: state.paused, speed: state.speed, dither: state.dither });
         if (!bridge) return;
         const content = statsText(stats);
         serial(() => bridge.textContainerUpgrade(new TextContainerUpgrade({ containerID: 2, containerName: 'stats', content }))).catch((e) => log('COIN_ERROR', String(e)));
@@ -125,12 +165,18 @@ async function main(): Promise<void> {
   let loop: FrameLoop;
 
   if (bridge) {
-    const created = await bridge.createStartUpPageContainer(new CreateStartUpPageContainer(pageContainers(LAYOUTS[0])));
+    const info = await bridge.getDeviceInfo().catch(() => null);
+    log('COIN_DEVICE', { model: info?.model ?? null, ...deviceStatus(info?.status) });
+    bridge.onDeviceStatusChanged((status) => log('COIN_DEVICE', deviceStatus(status)));
+    const first = pageContainers(LAYOUTS[state.layout]);
+    const created = await bridge.createStartUpPageContainer(new CreateStartUpPageContainer(first));
+    let rebuilt: boolean | null = null;
     if (created !== 0) {
       // A page already exists (dev reload): replace it.
-      const rebuilt = await bridge.rebuildPageContainer(new RebuildPageContainer(pageContainers(LAYOUTS[0])));
+      rebuilt = await bridge.rebuildPageContainer(new RebuildPageContainer(first));
       if (!rebuilt) throw new Error(`page create returned ${created} and rebuild failed`);
     }
+    log('COIN_PAGE', { created, rebuilt });
   }
 
   async function switchLayout(): Promise<void> {
@@ -165,7 +211,7 @@ async function main(): Promise<void> {
   }
 
   bridge?.onEvenHubEvent(onInput);
-  log('COIN_READY', { glasses: Boolean(bridge) });
+  log('COIN_READY', { glasses: Boolean(bridge), layout: LAYOUTS[state.layout].name, userAgent: navigator.userAgent });
   loop = startLayout(LAYOUTS[state.layout], bridge, serial);
 }
 

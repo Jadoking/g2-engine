@@ -22,6 +22,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite demos/coin --host 127.0.0.1 --port 47846 --strictPort",
+    "build:coin": "vite build demos/coin --base ./ --outDir ../../dist/coin --emptyOutDir",
+    "serve:coin": "node scripts/serve-demo.ts dist/coin 47848",
     "test": "node --test test/*.test.ts",
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && npm test"

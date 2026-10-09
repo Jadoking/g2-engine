@@ -7,7 +7,8 @@
   <style>
     body { margin: 0; background: #050805; color: #8fdc8f; font: 13px/1.4 ui-monospace, monospace; }
     main { padding: 16px; }
-    canvas { width: 576px; height: 288px; image-rendering: pixelated; background: #000; outline: 1px solid #1d331d; }
+    canvas { width: 576px; max-width: 100%; height: auto; aspect-ratio: 2 / 1; image-rendering: pixelated; background: #000; outline: 1px solid #1d331d; }
+    #status { overflow-wrap: anywhere; }
     @media (min-width: 1200px) { canvas { width: 1152px; height: 576px; } }
   </style>
 </head>
@@ -15,7 +16,7 @@
   <main>
     <canvas id="mirror" width="576" height="288"></canvas>
     <p id="status">starting…</p>
-    <p>Glasses: click pause · swipe up/down spin speed · double-click dither</p>
+    <p>Glasses: tap pause · swipe up/down spin speed · double-tap dither · long-press layout</p>
   </main>
   <script type="module" src="./main.ts"></script>
 </body>
