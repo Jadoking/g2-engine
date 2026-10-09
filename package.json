@@ -1,0 +1,21 @@
+{
+  "name": "g2-engine",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Software raster engine for Even Realities G2: draw in a 576x288 16-level framebuffer, ship only changed image tiles.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite demos/coin --host 127.0.0.1 --port 47846 --strictPort",
+    "test": "node --test test/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm test"
+  },
+  "dependencies": {
+    "@evenrealities/even_hub_sdk": "0.0.16"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.4",
+    "typescript": "5.9.3",
+    "vite": "8.3.4"
+  }
+}

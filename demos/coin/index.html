@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>g2-engine · spinning coin</title>
+  <style>
+    body { margin: 0; background: #050805; color: #8fdc8f; font: 13px/1.4 ui-monospace, monospace; }
+    main { padding: 16px; }
+    canvas { width: 576px; height: 288px; image-rendering: pixelated; background: #000; outline: 1px solid #1d331d; }
+    @media (min-width: 1200px) { canvas { width: 1152px; height: 576px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <canvas id="mirror" width="576" height="288"></canvas>
+    <p id="status">starting…</p>
+    <p>Glasses: click pause · swipe up/down spin speed · double-click dither</p>
+  </main>
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>
