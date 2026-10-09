@@ -1,7 +1,7 @@
 // Serve a built demo over loopback HTTP and record its telemetry.
 // Usage: node scripts/serve-demo.ts <dir> <port> [telemetry.jsonl]
 // Put an HTTPS proxy you trust in front of it to reach a phone; it binds 127.0.0.1 only.
-// POST /telemetry appends one JSON line per request to the telemetry file.
+// POST .../telemetry appends one JSON line per request to the telemetry file.
 
 import { createServer } from 'node:http';
 import { appendFileSync, readFileSync, statSync } from 'node:fs';
@@ -37,7 +37,7 @@ function logSize(): number {
 const server = createServer((req, res) => {
   const url = new URL(req.url ?? '/', 'http://localhost');
 
-  if (req.method === 'POST' && url.pathname === '/telemetry') {
+  if (req.method === 'POST' && url.pathname.endsWith('/telemetry')) {
     let body = '';
     let tooLarge = false;
     req.setEncoding('utf8');
