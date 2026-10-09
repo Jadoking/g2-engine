@@ -33,11 +33,37 @@ Image containers are the only way to choose your own fonts, render Japanese with
 
 What this means for animation:
 
-- On the glasses, image updates cannot exceed 10 per second in total, across all tiles. A one-tile animation is limited to 10 fps, a two-tile animation to 5 fps, and Bluetooth will lower both further.
-- The simulator does not apply the 100 ms pacing. It ran the one-tile coin at 30 fps. Use simulator frame rates to check behaviour, not speed.
+- On the glasses, every image update costs at least about 150 ms, so image updates top out near 6 to 7 per second in total, across all tiles. Detailed content costs much more (see [Measured on glasses](#measured-on-glasses)).
+- The simulator applies neither the 100 ms pacing nor the Bluetooth cost. It ran the one-tile coin at 30 fps. Use simulator frame rates to check behaviour, not speed.
 - The `FrameLoop` design suits this link. It always renders the newest frame after the previous one is delivered, so a slow link lowers the frame rate without slowing the animation or building a backlog.
 - Tiles update one at a time, so content that moves across two tiles can tear. Keep animated content inside one tile.
 - Static content costs nothing after its first frame, because the engine sends only tiles whose pixels changed.
+
+## Measured on glasses
+
+One run of `demos/link-probe` on 2026-10-09: G2 glasses, iPhone on iOS 18.7, Even Hub SDK 0.0.16.
+Each case sent 4 updates in each of 2 rounds, and the first update of each block was dropped as warm-up.
+All 168 updates succeeded. Times are the median of 6, measured around the `updateImageRawData` call.
+
+| Tile | All black | One flat gray | Coin | Random noise |
+| --- | --- | --- | --- | --- |
+| 288×144 | 203 ms | 178 ms | 510 ms | 3264 ms |
+| 144×144 | 178 ms | 162 ms | 452 ms | 1677 ms |
+| 72×72 | 148 ms | 148 ms | 249 ms | 478 ms |
+| 24×24 | 149 ms | 149 ms | 164 ms | 179 ms |
+
+A native text update (`textContainerUpgrade`, about 60 characters) took 59 ms.
+
+What the run shows:
+
+- **There is a fixed cost of about 150 ms per image update.** Even a 24×24 all-black tile took 149 ms. That is above the 100 ms pacing rule, so the pacing is not the limit.
+- **After that, time depends on how much detail the image has, not on the PNG size.** The 288×144 PNGs were all 20,948 bytes, yet black took 203 ms and noise took 3264 ms. An 8-bit PNG of the coin (41,684 bytes) took the same time as the 4-bit one. This fits the host decoding the PNG and compressing the pixels again before Bluetooth.
+- **Incompressible pixels cross at roughly 7 KB per second,** assuming the glasses receive 4 bits per pixel: noise cost about 0.15 ms per byte at 288×144 and 144×144.
+- **Empty space is nearly free.** The same coin cost 510 ms in a 288×144 tile and 452 ms in a 144×144 tile. Trimming a tile to its content saves little; reducing detail saves a lot.
+- **Sending unchanged pixels costs the full price.** The host does not skip an identical image, so the engine's own changed-tile check matters.
+- **Idle time does not change the cost.** Waiting 400 ms before each send gave the same times, and round 2 matched round 1.
+- Times come in steps of about 30 ms (148, 178, 207 ms), which is likely the Bluetooth connection interval. Not confirmed.
+- The battery read 90% before and after the 88-second run. One-percent resolution is too coarse to measure the cost of a short run.
 
 ## Input
 
@@ -76,8 +102,8 @@ The simulator can expose an HTTP API for scripted tests with `--automation-port 
 
 These need physical glasses:
 
-- the real time to send one 288×144 tile over Bluetooth, and therefore the achievable frame rate;
-- whether the glasses decode the engine's PNG output the same way the simulator does;
+- whether the glasses show the engine's PNG output exactly as the simulator does (they accept it, but nobody has compared pixels);
+- whether fewer gray levels or long runs of one level make an image cheaper to send, as the compression result suggests;
 - the panel's response curve, to set `gamma`;
 - how readable small engine-rendered text is at each brightness level;
 - battery cost per image update compared with a native text update.

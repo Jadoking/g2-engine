@@ -72,7 +72,11 @@ ffmpeg -framerate 20 -i artifacts/frames/coin-%03d.png \
 
 ## Results so far
 
-All numbers come from the Even Hub simulator 0.9.5 on a desktop PC.
+On G2 glasses (iPhone, iOS 18.7, SDK 0.0.16), the small coin ran at 1.4 to 2 fps for about 5 minutes.
+Drawing a frame on the phone took about 13 to 18 ms. Each image update took 550 to 730 ms, so the link sets the frame rate.
+The [link probe](g2-platform.md#measured-on-glasses) explains why: each image update costs about 150 ms plus time for the detail in the image, and the shaded coin has a lot of detail.
+
+The rest of this section comes from the Even Hub simulator 0.9.5 on a desktop PC.
 
 | Layout | Frame rate | Draw time per frame | Send time per tile | PNG bytes per frame |
 | --- | --- | --- | --- | --- |
@@ -88,6 +92,4 @@ A few matched best with the two halves about one frame apart (6 to 9°), which i
 The match is noisy when the coin is nearly edge-on, so treat this as likely rather than proven.
 The small coin cannot tear, because each frame is a single update.
 
-The simulator does not apply the 100 ms pacing that Even Hub uses for image sends on the glasses (see [G2 display and SDK limits](g2-platform.md#sending-images)).
-On the glasses, expect at most 10 fps for the small coin and 5 fps for the large coin, before Bluetooth limits.
-Measuring the real numbers is the next step.
+The simulator applies neither the 100 ms pacing nor the Bluetooth cost, so its frame rates say nothing about speed on the glasses.

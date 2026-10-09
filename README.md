@@ -26,11 +26,12 @@ Native text stays available for regions that change often or matter less, becaus
 - `Engine`, which tracks what each tile on the glasses currently shows and sends a tile only when its 16-level pixels differ. A paused animation sends 0 bytes.
 - `FrameLoop`, an animation loop that drops stale frames on a slow link instead of queueing them, so the glasses always get the newest frame.
 - An Even Hub adapter that maps tiles to image containers and sends one bridge call at a time, so updates never overlap and arrive in order.
-- A spinning-coin demo that uses all of the above.
+- A spinning-coin demo that uses all of the above. On the glasses it runs at about 1.5 to 2 fps; see [Measured on glasses](docs/g2-platform.md#measured-on-glasses).
+- A link probe (`demos/link-probe`) that times image and text updates on real glasses.
 
 Planned next:
 
-- running the coin on physical glasses and measuring tile latency, gamma and readability;
+- cheaper frames: fewer gray levels, flat areas and smaller moving regions, measured with the link probe;
 - text layout with Japanese line-breaking rules;
 - an offline compiler from TTF/OTF fonts to 16-level bitmap fonts;
 - choosing native text or raster per region, for battery and latency.
